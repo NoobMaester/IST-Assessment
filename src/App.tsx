@@ -7,7 +7,7 @@ import Dashboard from './pages/Dashboard'
 
 function App() {
   return (
-    <div className="flex flex-col min-h-screen bg-gray-50">
+    <div className="flex flex-col min-h-screen bg-[#192733]">
       <Navbar />
       <main className="flex-1 container mx-auto px-4 py-8">
         <Routes>
