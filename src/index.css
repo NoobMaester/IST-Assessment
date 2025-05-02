@@ -1,8 +1,6 @@
-@import "tailwindcss";
-
-/* @import 'tailwindcss/base';
-@import 'tailwindcss/components';
-@import 'tailwindcss/utilities'; */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 :root {
   font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
@@ -26,8 +24,6 @@ body {
     background-color: #ffffff;
   }
 }
-
-
 
 @layer base {
   :root {
@@ -84,8 +80,6 @@ body {
     --chart-5: 340 75% 55%;
   }
 }
-
-
 
 @layer base {
   * {

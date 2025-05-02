@@ -1,129 +1,147 @@
 import React, { useState, useEffect } from 'react';
-import { Table, Button, message } from 'antd';
-import type { ColumnsType } from 'antd/es/table';
-import Space from 'antd/lib/space';
-import axios, { AxiosError } from 'axios';
-
-interface LeaveData {
-    id: number;
-    employeeId: string;
-    startDate: string;
-    endDate: string;
-    leaveType: string;
-    status: string;
-    reason: string;
-}
+import { useAuth } from '../hooks/useAuth';
+import { Button } from '../components/ui/button';
+import { DataTable } from '../components/ui/data-table';
+import { useToast } from '../hooks/use-toast';
+import axios from 'axios';
+import { LeaveRequest } from '../components/types';
+import { ColumnDef } from '@tanstack/react-table';
 
 const LeavesPage: React.FC = () => {
-    const [leaves, setLeaves] = useState<LeaveData[]>([]);
+    const { token } = useAuth();
+    const { toast } = useToast();
+    const [leaves, setLeaves] = useState<LeaveRequest[]>([]);
     const [loading, setLoading] = useState<boolean>(false);
     
-    const columns: ColumnsType<LeaveData> = [
+    const fetchLeaves = React.useCallback(async () => {
+        try {
+            setLoading(true);
+            const response = await axios.get('http://localhost:5001/api/leaves', {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            setLeaves(response.data);
+        } catch (error) {
+            console.error('Failed to fetch leaves:', error);
+            toast({
+                title: 'Failed to fetch leaves',
+                variant: 'destructive'
+            });
+        } finally {
+            setLoading(false);
+        }
+    }, [token, toast]);
+
+    useEffect(() => {
+        fetchLeaves();
+    }, [fetchLeaves]);
+    
+    const columns: ColumnDef<LeaveRequest>[] = [
         {
-            title: 'Employee ID',
-            dataIndex: 'employeeId',
-            key: 'employeeId',
+            accessorKey: "employeeId",
+            header: "Employee ID",
         },
         {
-            title: 'Start Date',
-            dataIndex: 'startDate',
-            key: 'startDate',
+            accessorKey: "startDate",
+            header: "Start Date",
+            cell: ({ row }) => new Date(row.original.startDate).toLocaleDateString(),
         },
         {
-            title: 'End Date',
-            dataIndex: 'endDate',
-            key: 'endDate',
+            accessorKey: "endDate",
+            header: "End Date",
+            cell: ({ row }) => new Date(row.original.endDate).toLocaleDateString(),
         },
         {
-            title: 'Leave Type',
-            dataIndex: 'leaveType',
-            key: 'leaveType',
+            accessorKey: "type",
+            header: "Leave Type",
         },
         {
-            title: 'Status',
-            dataIndex: 'status',
-            key: 'status',
+            accessorKey: "status",
+            header: "Status",
+            cell: ({ row }) => {
+                const status = row.original.status;
+                const base = "px-2 py-1 text-xs font-medium rounded";
+                const color =
+                    status === "Approved"
+                        ? "bg-green-100 text-green-700"
+                        : status === "Rejected"
+                            ? "bg-red-100 text-red-700"
+                            : "bg-yellow-100 text-yellow-700";
+                return <span className={`${base} ${color}`}>{status}</span>;
+            },
         },
         {
-            title: 'Reason',
-            dataIndex: 'reason',
-            key: 'reason',
+            accessorKey: "reason",
+            header: "Reason",
         },
         {
-            title: 'Actions',
-            key: 'actions',
-            render: (_: any, record: LeaveData) => (
-                <Space>
-                    <Button 
-                        type="primary" 
-                        onClick={() => handleApprove(record.id)}
+            id: "actions",
+            header: "Actions",
+            cell: ({ row }) => (
+                <div className="space-x-2">
+                    <Button
+                        variant="default"
+                        size="sm"
+                        onClick={() => handleApprove(row.original._id)}
                     >
-                        {`Approve`}
+                        Approve
                     </Button>
-                    <Button 
-                        type="primary" 
-                        danger 
-                        onClick={() => handleReject(record.id)}
+                    <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => handleReject(row.original._id)}
                     >
-                        {`Reject`}
+                        Reject
                     </Button>
-                </Space>
+                </div>
             ),
         },
     ];
 
-    useEffect(() => {
-        fetchLeaves();
-    }, []);
-
-    const fetchLeaves = async () => {
+    const handleApprove = async (id: string) => {
         try {
-            setLoading(true);
-            const response = await axios.get('http://localhost:8080/api/leaves');
-            setLeaves(response.data);
-        } catch (err) {
-            const error = err as AxiosError;
-            console.error('Failed to fetch leaves:', error.message);
-            message.error('Failed to fetch leaves');
-        } finally {
-            setLoading(false);
+            await axios.patch(`http://localhost:5001/api/leaves/${id}`, 
+                { status: 'Approved' },
+                { headers: { Authorization: `Bearer ${token}` } }
+            );
+            toast({ title: 'Leave approved successfully' });
+            fetchLeaves();
+        } catch (error) {
+            console.error('Failed to approve leave:', error);
+            toast({
+                title: 'Failed to approve leave',
+                variant: 'destructive'
+            });
         }
     };
 
-    const handleApprove = async (id: number) => {
+    const handleReject = async (id: string) => {
         try {
-            await axios.put(`http://localhost:8080/api/leaves/${id}/approve`);
-            message.success('Leave approved successfully');
+            await axios.patch(`http://localhost:5001/api/leaves/${id}`, 
+                { status: 'Rejected' },
+                { headers: { Authorization: `Bearer ${token}` } }
+            );
+            toast({ title: 'Leave rejected successfully' });
             fetchLeaves();
-        } catch (err) {
-            const error = err as AxiosError;
-            console.error('Failed to approve leave:', error.message);
-            message.error('Failed to approve leave');
-        }
-    };
-
-    const handleReject = async (id: number) => {
-        try {
-            await axios.put(`http://localhost:8080/api/leaves/${id}/reject`);
-            message.success('Leave rejected successfully');
-            fetchLeaves();
-        } catch (err) {
-            const error = err as AxiosError;
-            console.error('Failed to reject leave:', error.message);
-            message.error('Failed to reject leave');
+        } catch (error) {
+            console.error('Failed to reject leave:', error);
+            toast({
+                title: 'Failed to reject leave',
+                variant: 'destructive'
+            });
         }
     };
 
     return (
-        <div style={{ padding: '24px' }}>
-            <h1>Leave Requests</h1>
-            <Table
-                columns={columns}
-                dataSource={leaves}
-                loading={loading}
-                rowKey={(record) => record.id.toString()}
-                pagination={{ pageSize: 10 }}
-            />
+        <div className="p-6">
+            <h1 className="text-2xl font-semibold mb-4">Leave Requests</h1>
+            {loading ? (
+                <div className="text-center py-4">Loading...</div>
+            ) : (
+                <DataTable
+                    columns={columns}
+                    data={leaves}
+                />
+            )}
         </div>
     );
 };
