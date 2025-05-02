@@ -4,8 +4,12 @@ import Navbar from './components/Navbar'
 import Footer from './components/Footer'
 import Login from './pages/Login'
 import Register from './pages/Register'
-import Dashboard from './pages/Dashboard'
+import AdminDashboard from './pages/AdminDashboard'
+import LeavesPage from './pages/LeavesPage'
 import NotFound from './pages/NotFound'
+import { PrivateRoute } from './components/PrivateRoute'
+import { AdminRoute } from './components/AdminRoute'
+import Unauthorized from './pages/Unauthorized'
 
 function App() {
   return (
@@ -15,7 +19,18 @@ function App() {
         <Routes>
           <Route path="/" element={<Login />} />
           <Route path="/register" element={<Register />} />
-          <Route path="/dashboard" element={<Dashboard />} />
+
+          <Route path="/leaves" element={
+            <PrivateRoute>
+              <LeavesPage />
+            </PrivateRoute>
+          } />
+          <Route path="/admin" element={
+            <AdminRoute>
+              <AdminDashboard />
+            </AdminRoute>
+          } />
+          <Route path="/unauthorized" element={<Unauthorized />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </main>
