@@ -4,7 +4,7 @@ A modern web application for managing leave requests and approvals, built with R
 
 ## Technologies Used
 
-- React 19
+- React
 - TypeScript
 - Vite
 - TailwindCSS
